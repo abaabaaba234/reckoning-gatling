@@ -1,0 +1,121 @@
+{
+  "game_build": 25480438,
+  "origin": "Filediver CLI v0.7.55 extraction from current build 25480438; resource references only",
+  "base": {
+    "header_hex": "010000001a5ae5e60900000000000000",
+    "sha256": "fca1b655aa97451216b9abb581ddbcf13010b24de7cc75b422e6e572e7080162",
+    "entries": [
+      [
+        "535a7bd3e650d799",
+        "7872817fc8f73db4"
+      ],
+      [
+        "a8193123526fad64",
+        "2d1f9cb560e84eae"
+      ],
+      [
+        "a8193123526fad64",
+        "4f069f48ce3cdb45"
+      ],
+      [
+        "a8193123526fad64",
+        "61a844a05923db53"
+      ],
+      [
+        "af32095c82f2b070",
+        "7872817fc8f73db4"
+      ],
+      [
+        "eac0b497876adedf",
+        "6bd2e56fb7bcec27"
+      ],
+      [
+        "eac0b497876adedf",
+        "906550f1c04f4c1e"
+      ],
+      [
+        "eac0b497876adedf",
+        "b3479e208fa6851a"
+      ],
+      [
+        "eac0b497876adedf",
+        "d6e75d04df4e9b28"
+      ]
+    ]
+  },
+  "fire_support": {
+    "header_hex": "010000001a5ae5e61100000000000000",
+    "sha256": "9acafdb0b8abddd0b92c195bd0eba732f3bd90b4f2dbfdbc9ae1c92b91153449",
+    "entries": [
+      [
+        "535a7bd3e650d799",
+        "09ccb80ae5df1218"
+      ],
+      [
+        "a8193123526fad64",
+        "0534ff3653cc0cee"
+      ],
+      [
+        "a8193123526fad64",
+        "61a844a05923db53"
+      ],
+      [
+        "a8193123526fad64",
+        "68358a1cc55afddb"
+      ],
+      [
+        "a8193123526fad64",
+        "6bf2d192071af21f"
+      ],
+      [
+        "a8193123526fad64",
+        "a3f78867a59662c4"
+      ],
+      [
+        "af32095c82f2b070",
+        "09ccb80ae5df1218"
+      ],
+      [
+        "eac0b497876adedf",
+        "1747f46ebcd38b89"
+      ],
+      [
+        "eac0b497876adedf",
+        "37e327a5d5dd99e3"
+      ],
+      [
+        "eac0b497876adedf",
+        "395d7e5b74bcad1b"
+      ],
+      [
+        "eac0b497876adedf",
+        "701352a31e18aef9"
+      ],
+      [
+        "eac0b497876adedf",
+        "906550f1c04f4c1e"
+      ],
+      [
+        "eac0b497876adedf",
+        "c2577f2c8ba46ff7"
+      ],
+      [
+        "eac0b497876adedf",
+        "c9231206e9b43232"
+      ],
+      [
+        "eac0b497876adedf",
+        "f451ffc475e1daf5"
+      ],
+      [
+        "eac0b497876adedf",
+        "f66f466efae9034e"
+      ],
+      [
+        "eac0b497876adedf",
+        "fa652423406182d3"
+      ]
+    ]
+  },
+  "policy": "Preserve gatling dependencies and preload all native orbital napalm references for ground fire. No game assets copied."
+}
