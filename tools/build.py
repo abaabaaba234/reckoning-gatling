@@ -37,7 +37,7 @@ def patch(source):
 def manifest():
     return {'Version':1,'Guid':IDENTITY['guid'],
         'Name':'清算节燃烧轨道加特林 / Reckoning Gatling v'+VERSION,
-        'Description':'原生清算节燃烧弹序，落点留地火；保留当前伤害、冷却与舰船升级。需要 Bingus Shared Loader v18 / API1；菜单开关另需 ModOptionsMenu API1 / version2 或更新。支持 Steam build 25480438。仅通过离线验证，尚未实机或联机验证。',
+        'Description':'原生清算节燃烧弹序，落点留地火；保留当前伤害、冷却与舰船升级。需要 Bingus Shared Loader v18 / API1；菜单开关另需 ModOptionsMenu API1 / version2 或更新。支持 Steam build 25480438。离线检查通过；用户于 2026-10-10 实机测试反馈无问题。联机兼容性未确认。',
         'Options':[{'Name':'清算节燃烧轨道加特林','Description':'Esc → MODS 中应用启用开关。默认开启。','Include':['Core']}]}
 
 def build():
@@ -50,7 +50,8 @@ def build():
     name='Core/9ba626afa44a3aa3.patch_0'
     files={name:patch(source),name+'.stream':b'',name+'.gpu_resources':b'',
         'manifest.json':json.dumps(manifest(),ensure_ascii=True,indent=2).encode('ascii'),
-        'VALIDATION.json':json.dumps(report,indent=2).encode('utf8')}
+        'VALIDATION.json':json.dumps(report,indent=2).encode('utf8'),
+        'USER_TEST_FEEDBACK.json':(ROOT/'tests/fixtures/user_test_feedback.json').read_bytes()}
     output=ROOT/'dist'/f'ReckoningGatling_v{VERSION}.zip';output.parent.mkdir(exist_ok=True)
     tmp=output.with_suffix('.zip.tmp')
     with zipfile.ZipFile(tmp,'w',zipfile.ZIP_DEFLATED) as z:

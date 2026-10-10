@@ -1,0 +1,11 @@
+{
+  "reported_on": "2026-10-10",
+  "timezone": "Asia/Shanghai",
+  "version": "0.1.0",
+  "source": "Direct user feedback in this chat after testing the delivered installation package",
+  "quote": "测试完了没有问题",
+  "result": "USER_REPORTED_PASSED",
+  "gameplay_code_changed_since_test": false,
+  "multiplayer_tested": null,
+  "test_details": "User did not separately specify mission, ship upgrades, lobby type or test build. No broader coverage is inferred."
+}
