@@ -179,6 +179,7 @@ def restore_partial(s):
 def invalid_config(s):
     s.tick();s.cfg('enabled=no\n');assert s.state[b'phase']==b'active'
     s.cfg('# incomplete file\n');assert s.state[b'phase']==b'active'
+    s.cfg('enabled=0\nlanguage=invalid\n');assert s.state[b'phase']==b'active' and s.state[b'config'][b'language']==b'zh'
 
 def duplicate_init(s):
     old=s.lua.globals()[b'update']
@@ -190,19 +191,35 @@ def menu_case():
     s=Scenario(menu=True)
     try:
         s.tick();m=s.lua.globals()[b'menu_state']
-        assert len(m[b'order'])==1 and m[b'order'][1]==b'reckoning_gatling_enabled'
-        assert m[b'values'][b'reckoning_gatling_enabled'] is True
+        assert len(m[b'order'])==2 and m[b'order'][1]==b'reckoning_gatling_language' and m[b'order'][2]==b'reckoning_gatling_enabled'
+        assert m[b'values'][b'reckoning_gatling_enabled'] is True and m[b'values'][b'reckoning_gatling_language']==1
+        descriptions={key:m[b'options'][b'reckoning_gatling_'+key][b'description'] for key in (b'language',b'enabled')}
+        for description in descriptions.values():
+            assert len(description.decode('utf8'))<=400
+        assert '中英同显' in descriptions[b'language'].decode('utf8') and b'Chinese and English' in descriptions[b'language']
+        assert '原生清算节' in descriptions[b'enabled'].decode('utf8') and b'native Reckoning' in descriptions[b'enabled']
         s.lua.execute(b'menu_state.pending.reckoning_gatling_enabled=false')
         count=m[b'sets'];s.tick();assert m[b'sets']==count and m[b'pending'][b'reckoning_gatling_enabled'] is False
+        writes=len(s.mem.writes)
+        for choice,label in ((2,b'Enable'),(1,'启用'.encode('utf8')),(2,b'Enable')):
+            assert s.lua.globals()[b'menu_apply'](b'reckoning_gatling_language',choice) is True;s.tick()
+            assert len(s.mem.writes)==writes and m[b'options'][b'reckoning_gatling_enabled'][b'label']()==label
+            assert all(m[b'options'][b'reckoning_gatling_'+key][b'description']==description for key,description in descriptions.items())
         assert s.lua.globals()[b'menu_apply'](b'reckoning_gatling_enabled',False) is True
-        s.tick();assert s.bytes()==s.baseline;saved=s.cfg_path.read_text();assert saved=='enabled=0\n'
+        s.tick();assert s.bytes()==s.baseline;saved=s.cfg_path.read_text();assert saved=='language=en\nenabled=0\n'
         s.replace_failure=True;result=s.lua.globals()[b'menu_apply'](b'reckoning_gatling_enabled',True)
         assert result[0] is False;s.tick();assert s.state[b'phase']==b'disabled'
+        result=s.lua.globals()[b'menu_apply'](b'reckoning_gatling_language',1)
+        assert result[0] is False and s.state[b'config'][b'language']==b'en' and s.cfg_path.read_text()==saved
+        assert s.lua.globals()[b'menu_apply'](b'reckoning_gatling_language',3)[0] is False
     finally:s.close()
     s=Scenario(cfg=saved,menu=True)
-    try:s.tick();assert s.state[b'phase']==b'disabled' and not s.mem.writes
+    try:s.tick();assert s.state[b'phase']==b'disabled' and not s.mem.writes and s.state[b'config'][b'language']==b'en'
     finally:s.close()
-    print('PASS menu Apply, pending edits, persistence and save failure')
+    s=Scenario(cfg='enabled=0\n',menu=True)
+    try:s.tick();assert s.state[b'phase']==b'disabled' and s.state[b'config'][b'language']==b'zh' and not s.mem.writes
+    finally:s.close()
+    print('PASS menu bilingual descriptions, language/legacy config, Apply, pending edits, persistence and save failure')
 
 def external_menu():
     path=os.environ.get('HD2_MOD_OPTIONS_MENU_SOURCE')
@@ -226,14 +243,22 @@ def external_menu():
         ''')
         s.tick();mom=s.lua.globals()[b'mom'];api=mom[b'api'];state=mom[b'state']
         assert s.state[b'menu_registered'] is True and api[b'version']==3
-        assert len(state[b'mods'])==1 and len(state[b'mods'][1][b'order'])==1
+        assert len(state[b'mods'])==1 and len(state[b'mods'][1][b'order'])==2
+        descriptions={key:state[b'options'][b'reckoning_gatling_'+key][b'description'] for key in (b'language',b'enabled')}
+        writes=len(s.mem.writes)
+        for choice,label in ((2,b'Enable'),(1,'启用'.encode('utf8'))):
+            mom[b'set_pending'](b'reckoning_gatling_language',choice)
+            assert mom[b'apply_pending']()==1;s.tick();mom[b'translation'][b'refresh']()
+            assert len(s.mem.writes)==writes and len(state[b'mods'])==1 and len(state[b'mods'][1][b'order'])==2
+            assert state[b'options'][b'reckoning_gatling_enabled'][b'label']==label
+            assert all(state[b'options'][b'reckoning_gatling_'+key][b'description']==description for key,description in descriptions.items())
         mom[b'set_pending'](b'reckoning_gatling_enabled',False);s.tick()
         assert state[b'pending'][b'reckoning_gatling_enabled'] is False
         assert mom[b'apply_pending']()==1;s.tick();assert s.bytes()==s.baseline
         mom[b'set_pending'](b'reckoning_gatling_enabled',True)
         assert mom[b'apply_pending']()==1;s.tick();assert s.state[b'phase']==b'active'
         assert len(state[b'callbacks'][b'reckoning_gatling_enabled'])==1
-        print('PASS actual external menu API 1 / version 3 registration and Apply')
+        print('PASS actual external menu API 1 / version 3 bilingual text, language refresh, registration and Apply')
         return {'version':3,'source_sha256':hashlib.sha256(source).hexdigest(),
             'scope':'actual API/options modules; native UI descriptor and text service mocked; no in-game rendering'}
     finally:s.close()
@@ -283,7 +308,8 @@ def main():
     finally:s.close()
     print('PASS missing callback rejection')
     menu_case();provider=external_menu();package=package_checks()
-    report={'status':'OFFLINE_PASSED','version':'0.1.0','game_build':25480438,
+    identity=json.loads((ROOT/'tools/identity.json').read_text())
+    report={'status':'OFFLINE_PASSED','version':identity['version'],'game_build':25480438,
         'source_sha256':hashlib.sha256(SOURCE).hexdigest(),'test_groups':len(cases)+5+(1 if provider else 0),
         'ingame_tested':False,'multiplayer_tested':False,'external_menu_verification':provider,
         'package':package,'fixture_origin':FIXTURE['origin'],

@@ -37,8 +37,8 @@ def patch(source):
 def manifest():
     return {'Version':1,'Guid':IDENTITY['guid'],
         'Name':'清算节燃烧轨道加特林 / Reckoning Gatling v'+VERSION,
-        'Description':'原生清算节燃烧弹序，落点留地火；保留当前伤害、冷却与舰船升级。需要 Bingus Shared Loader v18 / API1；菜单开关另需 ModOptionsMenu API1 / version2 或更新。支持 Steam build 25480438。离线检查通过；用户于 2026-10-10 实机测试反馈无问题。联机兼容性未确认。',
-        'Options':[{'Name':'清算节燃烧轨道加特林','Description':'Esc → MODS 中应用启用开关。默认开启。','Include':['Core']}]}
+        'Description':'原生清算节燃烧弹序，落点留地火；保留当前弹体直击伤害、冷却与舰船升级。MODS 菜单提供中文/英文选择，介绍始终中英同显。需要 Bingus Shared Loader v18 / API1 和 ModOptionsMenu API1 / version2 或更新。支持 Steam build 25480438。菜单更新仅离线验证；用户于 2026-10-10 对 v0.1.0 实机测试反馈无问题。联机兼容性未确认。 / Native Reckoning incendiary sequence with ground fire; keeps current direct-hit damage, cooldown and ship upgrades. Chinese/English menu choices always show bilingual descriptions. Requires Bingus Shared Loader v18 / API1 and ModOptionsMenu API1 / version2 or newer. Steam build 25480438. Menu update tested offline; v0.1.0 passed user-reported gameplay on 2026-10-10. Multiplayer unconfirmed.',
+        'Options':[{'Name':'清算节燃烧轨道加特林 / Reckoning Gatling','Description':'Esc → MODS 中应用启用开关和语言选择。默认开启、默认中文，介绍始终中英同显。 / Apply Enable and Language in Esc → MODS. Enabled by default; Chinese labels by default; descriptions always bilingual.','Include':['Core']}]}
 
 def build():
     subprocess.run([sys.executable,str(ROOT/'tests/test_runtime.py')],cwd=ROOT,check=True)
@@ -56,7 +56,7 @@ def build():
     tmp=output.with_suffix('.zip.tmp')
     with zipfile.ZipFile(tmp,'w',zipfile.ZIP_DEFLATED) as z:
         for key,value in sorted(files.items()):
-            info=zipfile.ZipInfo(key,(2026,10,10,0,0,0));info.compress_type=zipfile.ZIP_DEFLATED;z.writestr(info,value)
+            info=zipfile.ZipInfo(key,(2026,10,13,0,0,0));info.compress_type=zipfile.ZIP_DEFLATED;z.writestr(info,value)
     with zipfile.ZipFile(tmp) as z:
         assert z.testzip() is None
         assert all(z.read(k)==v for k,v in files.items())

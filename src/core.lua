@@ -2,7 +2,7 @@
 -- Native incendiary gatling delta; preserves current damage, cooldown and ship upgrades.
 local previous=rawget(_G,'ReckoningGatling')
 if previous then return previous end
-local S={version='0.1.0',phase='waiting',elapsed=0,owned={},writes=0,cleanup_attempts=0}
+local S={version='0.1.1',phase='waiting',elapsed=0,owned={},writes=0,cleanup_attempts=0}
 rawset(_G,'ReckoningGatling',S)
 local ffi=require('ffi')
 local kernel={}
@@ -27,10 +27,10 @@ local function log(message)
     local f=io.open(folder..'ReckoningGatling.log',first and 'w' or 'a')
     if f then first=false;f:write(os.date('%H:%M:%S ')..message..'\n');f:close() end
 end
-local config={enabled=1};S.config=config
+local config={enabled=1,language='zh'};S.config=config
 local last_config,menu,menu_blocked
-local function save(value)
-    local text='enabled='..value..'\n';local tmp=config_path..'.tmp'
+local function save(enabled,language)
+    local text='language='..language..'\nenabled='..enabled..'\n';local tmp=config_path..'.tmp'
     local f,reason=io.open(tmp,'wb');if not f then return false,reason end
     local written,why=f:write(text);local flushed=f:flush();local closed=f:close()
     if not written or not flushed or not closed then os.remove(tmp);return false,why or 'config I/O failed' end
@@ -39,25 +39,45 @@ local function save(value)
 end
 local function read_config()
     local f=io.open(config_path,'rb')
-    if not f then if last_config==nil then save(config.enabled)end;return end
+    if not f then if last_config==nil then save(config.enabled,config.language)end;return end
     local text=f:read('*a');f:close();if not text or text==last_config then return end
-    local next_value
+    local next_value,next_language
     for line in text:gmatch('[^\r\n]+')do
         local key,value=line:gsub('^\239\187\191',''):gsub('#.*$',''):match('^%s*([%w_]+)%s*=%s*(.-)%s*$')
         if key=='enabled' then
             if value~='0' and value~='1' then last_config=text;log('Invalid enabled value; retaining config');return end
             next_value=tonumber(value)
+        elseif key=='language' then
+            if value~='zh' and value~='en' then last_config=text;log('Invalid language; retaining config');return end
+            next_language=value
         end
     end
     last_config=text;if next_value~=nil then config.enabled=next_value end
+    if next_language~=nil then config.language=next_language end
 end
-local function change(value)
+local function change(key,value)
     if S.phase=='stopped' then return false,S.stop_reason end
-    if type(value)~='boolean' then return false,'expected boolean' end
-    value=value and 1 or 0;if config.enabled==value then return true end
-    local ok,why=save(value);if not ok then return false,why end
-    config.enabled=value;S.elapsed=1;return true
+    if key=='enabled' then
+        if type(value)~='boolean' then return false,'expected boolean' end
+        value=value and 1 or 0
+    elseif key=='language' then
+        if value~=1 and value~=2 then return false,'expected choice 1 or 2' end
+        value=value==1 and 'zh' or 'en'
+    else return false,'unknown option' end
+    if config[key]==value then return true end
+    local enabled=key=='enabled' and value or config.enabled
+    local language=key=='language' and value or config.language
+    local ok,why=save(enabled,language);if not ok then return false,why end
+    config[key]=value;S.elapsed=1;return true
 end
+local TEXT={
+    zh={title='清算节燃烧轨道加特林',enabled='启用'},
+    en={title='Reckoning Gatling',enabled='Enable'},
+}
+local LANGUAGE_DESCRIPTION='选择本模组标题和选项语言；介绍始终中英同显。应用后关闭并重新打开 Esc 菜单。 / Choose this mod\'s title and option language. Descriptions always show Chinese and English. Apply, then close and reopen the Esc menu.'
+local DESCRIPTION='使用原生清算节燃烧弹序，落点留地火。保留当前弹体直击伤害、冷却和舰船升级。只影响之后创建的火力网；关闭会恢复本模组拥有的配置。 / Uses the native Reckoning incendiary sequence, leaving ground fire. Current direct-hit damage, cooldown and ship upgrades remain. Affects newly created barrages; disabling restores settings owned by this mod.'
+local function text(key)return function()return TEXT[config.language][key]end end
+local title=text('title')
 local function checked(ok,why)if ok~=true then error(tostring(why or 'menu API failed'),0)end end
 local function menu_step()
     if menu_blocked then return end
@@ -68,15 +88,21 @@ local function menu_step()
             for _,method in ipairs{'register_option','on_change','get','set'}do
                 if type(api[method])~='function' then error('Missing menu method '..method,0)end
             end
-            local spec={type='toggle',mod='清算节燃烧轨道加特林',label='启用',default=config.enabled==1,
-                description='使用原生清算节燃烧弹序，落点留地火。保留当前伤害、冷却和舰船升级。只影响之后创建的火力网；关闭会恢复本模组拥有的配置。'}
-            if api.version>=3 then spec.mod_id='reckoning_gatling' end
-            checked(api.register_option('reckoning_gatling_enabled',spec))
-            checked(api.on_change('reckoning_gatling_enabled',change))
+            local language={type='choice',mod=title,label='Language',choices={'简体汉字','English'},
+                default=config.language=='en' and 2 or 1,description=LANGUAGE_DESCRIPTION}
+            local enabled={type='toggle',mod=title,label=text('enabled'),default=config.enabled==1,description=DESCRIPTION}
+            if api.version>=3 then language.mod_id='reckoning_gatling';enabled.mod_id='reckoning_gatling' end
+            checked(api.register_option('reckoning_gatling_language',language))
+            checked(api.register_option('reckoning_gatling_enabled',enabled))
+            checked(api.on_change('reckoning_gatling_language',function(v)return change('language',v)end))
+            checked(api.on_change('reckoning_gatling_enabled',function(v)return change('enabled',v)end))
             menu=api;S.menu_registered=true;log('MODS menu registered')
         end
-        local value=config.enabled==1
-        if menu.get('reckoning_gatling_enabled')~=value then checked(menu.set('reckoning_gatling_enabled',value))end
+        local wanted={language=config.language=='en' and 2 or 1,enabled=config.enabled==1}
+        for key,value in pairs(wanted)do
+            local id='reckoning_gatling_'..key
+            if menu.get(id)~=value then checked(menu.set(id,value))end
+        end
     end)
     if not ok then menu_blocked=tostring(why);log('Menu unavailable: '..menu_blocked)end
 end
@@ -255,7 +281,7 @@ local function tick(dt)
         end
     end
 end
-S.disable=function()return change(false)end
+S.disable=function()return change('enabled',false)end
 local loader=rawget(_G,'CowboyBingusModLoader')
 if not loader or loader.api~=1 or (tonumber(loader.version) or 0)<17 then
     stop('Requires Bingus Shared Loader v18 / API 1');return S
